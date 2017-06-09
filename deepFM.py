@@ -10,18 +10,6 @@ from chainer import Chain
 from chainer import serializers
 from chainer import optimizers, optimizer
 
-# Logger settings
-from logging import getLogger, StreamHandler, Formatter
-from logging import DEBUG, INFO
-# level = DEBUG
-level = INFO
-logger = getLogger(__name__)
-handler = StreamHandler()
-handler.setLevel(level)
-handler.setFormatter(Formatter('%(asctime)s L%(lineno)d: %(message)s'))
-logger.setLevel(level)
-logger.addHandler(handler)
-
 
 class DeepFM(Chain):
     def __init__(self,
@@ -82,35 +70,25 @@ class DeepFM(Chain):
         """
         data: [([label], [features]), ([label], [features]), ...)]
         """
-        logger.debug(data)
+
         x_raw = [x[1] for x in data]
-        logger.debug(x_raw)
-
         batch_size = len(x_raw)
-        logger.debug(batch_size)
-
         # embed sparse featuer vector to dense vector
         x_sparse = XP.iarray(x_raw)
-        logger.debug(x_sparse.shape)
         x_sparse = F.reshape(x_sparse, [batch_size * self.nzdim])
-        logger.debug(x_sparse.shape)
         embeddings = self.embed(x_sparse)
-        logger.debug(embeddings.shape)
 
         # FM Component
-
         # 1st order
         first_order = F.reshape(
             F.sum(F.reshape(self.L1(x_sparse), (batch_size, self.nzdim)), 1)
             , (batch_size, 1)
             )
-        logger.debug(first_order.data)
 
         # 2nd order
         embeddings = F.reshape(
             embeddings, (batch_size, self.nzdim * self.embed_size)
         )
-        logger.debug(embeddings.shape)
 
         second_order = XP.fzeros((batch_size, 1))
         for i in range(self.nzdim-1):
@@ -120,17 +98,11 @@ class DeepFM(Chain):
 
                 second_order += F.reshape(F.batch_matmul(former, later, transa=True), (batch_size, 1))
 
-        logger.debug(second_order.data)
-
         y_fm = first_order + second_order
-        logger.debug(y_fm.data)
-
         # Deep Component
         embeddings = F.reshape(
             embeddings, (batch_size, self.nzdim * self.embed_size)
         )
-        logger.debug(embeddings.shape)
-
         h = F.dropout(
                 F.relu(self.L2(embeddings)),
                 ratio=0.9, train=is_training
@@ -144,11 +116,8 @@ class DeepFM(Chain):
                 ratio=0.9, train=is_training
             )
         y_deep = self.L5(h)
-        logger.debug(y_deep.data)
 
         y = y_fm + y_deep
-        # y = y_deep
-        logger.debug(y.data)
 
         if is_training:
             t_raw = [t[0] for t in data]
