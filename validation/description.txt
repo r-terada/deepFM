@@ -1,2 +1,0 @@
-train = 2017/04/18 - 2017/04/24, subsamplingRate = 0.2, nzdim=32
-test  = 2017/04/25
