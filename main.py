@@ -24,7 +24,7 @@ def read_fmdata(fname, batch_size):
             label = line.split("|")[0]
             if label in ["1", "1.0"]:
                 label = [1]
-            elif label in ["0.0", "-1.0", "0"]:
+            elif label in ["0.0", "-1.0", "0", "-1"]:
                 label = [0]
             else:
                 sys.exit("label tyep invalid!")
